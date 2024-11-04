@@ -6,6 +6,8 @@ using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
+using SharpDX.Direct3D11;
+using SharpDX.DXGI;
 using org.ogre;
 
 namespace OgreEngine
@@ -338,27 +340,34 @@ namespace OgreEngine
             if (!imageSourceValid)
             {
                 Lock();
-                IntPtr surface = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(IntPtr)));
+
+                //IntPtr surface = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(IntPtr)));
 
                 try
                 {
-                    //IntPtr surface = IntPtr.Zero;
+                    unsafe
+                    {
+                        IntPtr surface = IntPtr.Zero;
 
-                    root.getRenderSystem().getCustomAttribute("D3DDEVICE", surface);
+                        byte[] buffer = new byte[sizeof(IntPtr)];
+                        GCHandle handle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
 
-                    /*_renderWindow.getCustomAttribute("D3DDEVICE", surface2);
+                        root.getRenderSystem().getCustomAttribute("D3DDEVICE", handle.AddrOfPinnedObject());
+                        surface = (IntPtr) BitConverter.ToInt64(buffer,0);
 
-                    _renderWindow.getCustomAttribute("WINDOW", surface3);*/
+                        /*_renderWindow.getCustomAttribute("D3DDEVICE", surface2);
 
-                    //_renTarget.getCustomAttribute("WINDOW", surface); //Erro ao encontrar a String de parâmetro
+                        _renderWindow.getCustomAttribute("WINDOW", surface3);*/
 
-                    SetBackBuffer(D3DResourceType.IDirect3DSurface9, surface);
+                        //_renTarget.getCustomAttribute("WINDOW", surface); //Erro ao encontrar a String de parâmetro
 
-                    imageSourceValid = true;
+                        SetBackBuffer(D3DResourceType.IDirect3DSurface9, surface);
+
+                        imageSourceValid = true;
+                    }
                 }
                 finally
                 {
-                    Marshal.FreeHGlobal(surface);
                     Unlock();
                 }
             }
