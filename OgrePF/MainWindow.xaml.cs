@@ -1,17 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using OgreEngine;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+
 
 namespace OgrePF
 {
@@ -22,7 +11,23 @@ namespace OgrePF
     {
         public MainWindow()
         {
+            App.Current.Exit += Current_Exit;
+
             InitializeComponent();
+        }
+
+        void Current_Exit(object sender, ExitEventArgs e)
+        {
+            RenterTargetControl.Source = null;
+
+            ogreImage.Dispose();
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            ogreImage = (OgreImage)RenterTargetControl.Source;
+            ogreImage.InitOgreAsync();
+
         }
     }
 }
