@@ -1,235 +1,72 @@
-﻿using System;
-using System.ComponentModel;
-using System.Runtime.InteropServices;
-using System.Threading;
+﻿using org.ogre;
+using System;
 using System.Windows;
 using System.Windows.Interop;
-using System.Windows.Media;
 using System.Windows.Threading;
-using org.ogre;
 
 namespace OgreEngine
 {
-    public partial class OgreImage : D3DImage, ISupportInitialize
+    public partial class OgreImage : D3DImage
     {
+        private static Root root;
 
-        private delegate void MethodInvoker();
+        RenderWindow renderWindow;
 
-        private Root root;
-        private TexturePtr texture;
-        private RenderWindow renderWindow;
-        private Camera camera;
-        private Viewport viewport;
-        private SceneManager sceneManager;
-        private RenderTarget renTarget;
-        private int reloadRenderTargetTime;
-        private bool imageSourceValid;
-        private Thread currentThread;
+        private RenderTarget renderTarget;
+
+        private RenderSystem renderSystem;
+
+        private RenderTexture renderTexture;
+
+        private TexturePtr texturePtr;
+
+        private Camera cam;
+
         private DispatcherTimer timer;
-        private bool eventAttatched;
 
-        public Root Root
+        #region ViewportSize Property
+
+        public static readonly DependencyProperty ViewportSizeProperty =
+            DependencyProperty.Register("ViewportSize", typeof(Size), typeof(OgreImage),
+                                        new PropertyMetadata(new Size(100, 100), OnViewportProperyChanged)
+                );
+
+        private static void OnViewportProperyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            get { return root; }
+            var imageSource = (OgreImage)d;
         }
 
-        public SceneManager SceneManager
+        public Size ViewportSize
         {
-            get { return sceneManager; }
+            get { return (Size)GetValue(ViewportSizeProperty); }
+            set { SetValue(ViewportSizeProperty, value); }
         }
 
-        public RenderWindow RenderWindow
+        #endregion
+
+        private Viewport vp;
+
+
+        private bool _imageSourceValid;
+
+        public void Initialize()
         {
-            get { return renderWindow; }
-        }
+            root = new Root();
 
-        public Camera Camera
-        {
-            get { return camera; }
-        }
+            #region Log
 
-        public event RoutedEventHandler Initialised;
+            //LogManager logMngr = new LogManager();
+            //Log log = LogManager.getSingleton().createLog("OgreLog.log", true, true, false);
 
-        public event EventHandler PreRender;
+            #endregion
 
-        public event EventHandler PostRender;
+            #region Puglins / Resources config
 
-        public void Dispose()
-        {
-            IsFrontBufferAvailableChanged -= _isFrontBufferAvailableChanged;
 
-            DetachRenderTarget(true, true);
+            ConfigFile configFile = new ConfigFile();
 
-            if (currentThread != null)
-            {
-                currentThread.Abort();
-            }
-
-            if (root != null)
-            {
-                DisposeRenderTarget();
-                CompositorManager.getSingleton().removeAll();
-
-                root.Dispose();
-                root = null;
-            }
-
-            GC.SuppressFinalize(this);
-        }
-
-        public void BeginInit()
-        {
-        }
-
-        public void EndInit()
-        {
-            if (AutoInitialise)
-            {
-                InitOgre();
-            }
-        }
-
-        public bool InitOgre()
-        {
-            return _InitOgre();
-        }
-
-        public Thread InitOgreAsync(ThreadPriority priority, RoutedEventHandler completeHandler)
-        {
-            if (completeHandler != null)
-                Initialised += completeHandler;
-
-            currentThread = new Thread(() => _InitOgre())
-            {
-                Priority = priority
-            };
-            currentThread.Start();
-
-            return currentThread;
-        }
-
-        public void InitOgreAsync()
-        {
-            InitOgreAsync(ThreadPriority.Normal, null);
-        }
-
-        protected bool _InitOgre()
-        {
-            lock (this)
-            {
-                // Get Windows Handle
-                //
-                IntPtr hWnd = GetWindowHandle();
-
-                // Load the OGRE engine
-                //
-                root = new Root();
-
-                // Configure resource paths from : "resources.cfg" file
-                //
-                ConfigurePaths();
-
-                // Configures the application and creates the Window a window HAS to be created, even though we'll never use it.
-                //
-                if (!FindRenderSystem())
-                    return false;
-
-                RenderSystemConfig();
-
-                root.initialise(false);
-
-                RenderWindowConfig(hWnd);
-
-                ResourceGroupManager.getSingleton().initialiseAllResourceGroups();
-
-                this.Dispatcher.Invoke(
-                    (MethodInvoker)delegate
-                    {
-                        if (!CreateDefaultScene)
-                        {
-                            DefaultScene();
-                        }
-
-                        IsFrontBufferAvailableChanged += _isFrontBufferAvailableChanged;
-
-                        if (Initialised != null)
-                            Initialised(this, new RoutedEventArgs());
-
-                        ReInitRenderTarget();
-
-                        AttachRenderTarget(true);
-
-                        OnFrameRateChanged(this.FrameRate);
-
-                        currentThread = null;
-                    });
-                return true;
-            }
-        }
-
-        private void DefaultScene()
-        {
-            sceneManager = root.createSceneManager();
-            sceneManager.setAmbientLight(new ColourValue(0.5f, 0.5f, 0.5f));
-
-            SceneNode camNode = sceneManager.getRootSceneNode().createChildSceneNode();
-
-            camera = sceneManager.createCamera("DefaultCamera");
-            camNode.setPosition(200, 300, 400);
-            camNode.lookAt(new Vector3(0, 0, 0), Node.TransformSpace.TS_WORLD);
-            camera.setNearClipDistance(5);
-            camNode.attachObject(camera);
-
-            Viewport vp = renderWindow.addViewport(camera);
-            vp.setBackgroundColour(new ColourValue(0, 0, 0));
-
-            camera.setAspectRatio(vp.getActualWidth() / vp.getActualHeight());
-        }
-
-        private void RenderWindowConfig(IntPtr hWnd)
-        {
-            var misc = new NameValueMap();
-            misc["externalWindowHandle"] = hWnd.ToString();
-            renderWindow = root.createRenderWindow("OgreImageSource Windows", 0, 0, false, misc);
-            renderWindow.setAutoUpdated(false);
-        }
-
-        private void RenderSystemConfig()
-        {
-            root.getRenderSystem().setConfigOption("Full Screen", "No");
-            root.getRenderSystem().setConfigOption("Video Mode", "640 x 480 @ 32-bit colour");
-        }
-
-        private bool FindRenderSystem()
-        {
-            foreach (RenderSystem rs in root.getAvailableRenderers())
-            {
-                if (rs == null) continue;
-
-                root.setRenderSystem(rs);
-
-                if (root.getRenderSystem().getName() == "Direct3D11 Rendering Subsystem")
-                {
-                    foreach (var c in rs.getConfigOptions())
-                    {
-                        foreach (var p in c.Value.possibleValues)
-                        {
-                            LogManager.getSingleton().logMessage(p);
-                        }
-                    }
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        private static void ConfigurePaths()
-        {
-            var configFile = new ConfigFile();
             configFile.loadDirect("resources.cfg", "\t:=", true);
 
-            // Go through all sections
-            //
             var seci = configFile.getSettingsBySection();
 
             foreach (var section in seci)
@@ -253,225 +90,260 @@ namespace OgreEngine
                     }
                 }
             }
-        }
 
-        private IntPtr GetWindowHandle()
-        {
+            #endregion
+
+            #region RenderSystem
+
+            bool foundit = false;
+
+            foreach (RenderSystem rs in root.getAvailableRenderers())
+            {
+                if (rs == null) continue;
+
+                if (rs.getName() == "Direct3D9 Rendering Subsystem") // Se mudar para o Direct3D11 tem que ativar o ShaderGenerator
+                {
+                    root.setRenderSystem(rs);
+
+                    renderSystem = rs;
+
+                    foreach (var c in rs.getConfigOptions())
+                    {
+                        foreach (var p in c.Value.possibleValues)
+                        {
+                            LogManager.getSingleton().logMessage(p);
+                        }
+                    }
+
+                    foundit = true;
+                    break;
+                }
+            }
+
+            if (!foundit)
+            {
+                throw new Exception("Failed to find a compatible render system.");
+            }
+
+            renderSystem.setConfigOption("Full Screen", "No");
+            renderSystem.setConfigOption("Video Mode", "800 x 600 @ 32-bit colour");
+            renderSystem.setConfigOption("Allow NVPerfHUD", "No");
+            renderSystem.setConfigOption("FSAA", "0");
+            renderSystem.setConfigOption("Floating-point mode", "Consistent");
+            renderSystem.setConfigOption("Resource Creation Policy", "Create on active device");
+            renderSystem.setConfigOption("VSync", "No");
+
+            #endregion
+
+            root.initialise(false);
+
+            #region Render Window
+
             IntPtr hWnd = IntPtr.Zero;
 
             foreach (PresentationSource source in PresentationSource.CurrentSources)
             {
                 var hwndSource = (source as HwndSource);
-
                 if (hwndSource != null)
                 {
                     hWnd = hwndSource.Handle;
                     break;
                 }
             }
-            return hWnd;
+
+            NameValueMap miscParams = new NameValueMap
+            {
+                ["FSAA"] = "0",
+                ["Full Screen"] = "No",
+                ["VSync"] = "No",
+                ["sRGB Gamma Conversion"] = "No",
+                ["externalWindowHandle"] = hWnd.ToString()
+            };
+
+            renderWindow = root.createRenderWindow(
+                "Window Forms Ogre", //Render Targer name
+                1, // Width
+                1, // Height
+                false, // Windowed mode
+                miscParams
+                );
+
+            renderWindow.setAutoUpdated(false);
+
+            #endregion
+
+            SceneManager scnMgr = root.createSceneManager();
+
+            //var shadergen = ShaderGenerator.getSingleton(); //Usado somente com DX11
+            //shadergen.addSceneManager(scnMgr);
+
+            #region Ambient Light
+
+            scnMgr.setAmbientLight(new ColourValue(.1f, .1f, .1f));
+
+            #endregion
+
+            #region Light
+
+            var light = scnMgr.createLight("MainLight");
+            var lightnode = scnMgr.getRootSceneNode().createChildSceneNode();
+            lightnode.setPosition(0f, 10f, 15f);
+            lightnode.attachObject(light);
+
+            #endregion
+
+            #region Camera
+
+            var cam = scnMgr.createCamera("myCam");
+            cam.setAutoAspectRatio(true);
+            cam.setNearClipDistance(5);
+            var camnode = scnMgr.getRootSceneNode().createChildSceneNode();
+            camnode.attachObject(cam);
+
+            #endregion
+
+            #region Camera Man
+
+            var camman = new CameraMan(camnode);
+            camman.setStyle(CameraStyle.CS_ORBIT);
+            camman.setYawPitchDist(new Radian(0), new Radian(0.3f), 15f);
+
+            #endregion
+
+            #region Viewport
+
+            vp = renderWindow.addViewport(cam);
+            vp.setBackgroundColour(new ColourValue(.3f, .3f, .3f));
+
+            #endregion
+
+            #region Entity
+
+            var ent = scnMgr.createEntity("Sinbad.mesh");
+            var node = scnMgr.getRootSceneNode().createChildSceneNode();
+            node.attachObject(ent);
+
+            #endregion
+
+            IsFrontBufferAvailableChanged += _isFrontBufferAvailableChanged;
         }
 
-        protected void RenderFrame()
-        {
-            if ((camera != null) && (viewport == null))
-            {
-                viewport = renTarget.addViewport(camera);
-                viewport.setBackgroundColour(new ColourValue(0.0f, 0.0f, 0.0f, 0.0f));
-            }
-
-            if (PreRender != null)
-                PreRender(this, EventArgs.Empty);
-
-            root.renderOneFrame();
-
-            if (PostRender != null)
-                PostRender(this, EventArgs.Empty);
-        }
-
-        protected void DisposeRenderTarget()
-        {
-            if (renTarget != null)
-            {
-                CompositorManager.getSingleton().removeCompositorChain(viewport);
-                renTarget.removeAllListeners();
-                renTarget.removeAllViewports();
-                root.getRenderSystem().destroyRenderTarget(renTarget.getName());
-                renTarget = null;
-                viewport = null;
-            }
-
-            if (texture != null)
-            {
-                TextureManager.getSingleton().remove(texture.getHandle());
-                texture.Dispose();
-                texture = null;
-            }
-        }
-
-        protected void ReInitRenderTarget()
+        public void InitRenderTarget()
         {
             DetachRenderTarget(true, false);
             DisposeRenderTarget();
 
-            texture = TextureManager.getSingleton().createManual(
-                "OgreImageSource RenderTarget",
+            texturePtr = TextureManager.getSingleton().createManual(
+                "SharedTexture",
                 ResourceGroupManager.DEFAULT_RESOURCE_GROUP_NAME,
                 TextureType.TEX_TYPE_2D,
                 (uint)ViewportSize.Width,
                 (uint)ViewportSize.Height,
-                32,
+                64,
                 0,
                 org.ogre.PixelFormat.PF_R8G8B8A8,
-                (int)TextureUsage.TU_RENDERTARGET
-            );
+                (int)TextureUsage.TU_RENDERTARGET);
 
-            renTarget = texture.getBuffer().getRenderTarget();
-
-            reloadRenderTargetTime = 0;
+            renderTarget = texturePtr.getBuffer().getRenderTarget();
+            renderTarget.addViewport(cam);
         }
 
-        
-
-        protected virtual void AttachRenderTarget(bool attachEvent)
+        protected void DisposeRenderTarget()
         {
-            if (!imageSourceValid)
+            if (renderTarget != null)
             {
-                Lock();
-                IntPtr surface = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(IntPtr)));
-
-                try
-                {
-                    //IntPtr surface = IntPtr.Zero;
-
-                    root.getRenderSystem().getCustomAttribute("D3DDEVICE", surface);
-
-                    /*_renderWindow.getCustomAttribute("D3DDEVICE", surface2);
-
-                    _renderWindow.getCustomAttribute("WINDOW", surface3);*/
-
-                    //_renTarget.getCustomAttribute("WINDOW", surface); //Erro ao encontrar a String de parâmetro
-
-                    SetBackBuffer(D3DResourceType.IDirect3DSurface9, surface);
-
-                    imageSourceValid = true;
-                }
-                finally
-                {
-                    Marshal.FreeHGlobal(surface);
-                    Unlock();
-                }
+                renderTarget.removeAllListeners();
+                renderTarget.removeAllViewports();
+                renderSystem.destroyRenderTarget(renderTarget.getName());
+                renderTarget = null;
             }
 
-            if (attachEvent)
-                UpdateEvents(true);
+            if (texturePtr != null)
+            {
+                TextureManager.getSingleton().remove(texturePtr.getHandle());
+                texturePtr.Dispose();
+                texturePtr = null;
+            }
         }
 
-        protected virtual void DetachRenderTarget(bool detatchSurface, bool detatchEvent)
+
+
+        public virtual unsafe void AttachRenderTarget()
         {
-            if (detatchSurface && imageSourceValid)
+            try
             {
+                /*
+                var surface = IntPtr.Zero;
+
+                byte[] buffer = new byte[sizeof(IntPtr)];
+
+                GCHandle handle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
+
+                renderTarget.getCustomAttribute("DDBACKBUFFER", handle.AddrOfPinnedObject());
+                surface = (IntPtr)BitConverter.ToInt64(buffer, 0);
+                */
+
+                uint p = renderTarget.getCustomAttribute("DDBACKBUFFER");
+                var surface = new IntPtr(p);
+
+
                 Lock();
-                SetBackBuffer(D3DResourceType.IDirect3DSurface9, IntPtr.Zero);
+                SetBackBuffer(D3DResourceType.IDirect3DSurface9, surface, true);
+            }
+            finally
+            {
                 Unlock();
-
-                imageSourceValid = false;
-            }
-
-            if (detatchEvent)
-                UpdateEvents(false);
-        }
-
-        protected virtual void UpdateEvents(bool attach)
-        {
-            eventAttatched = attach;
-            if (attach)
-            {
-                if (timer != null)
-                    timer.Tick += _rendering;
-                else
-                    CompositionTarget.Rendering += _rendering;
-            }
-            else
-            {
-                if (timer != null)
-                    timer.Tick -= _rendering;
-                else
-                    CompositionTarget.Rendering -= _rendering;
             }
         }
 
         private void _isFrontBufferAvailableChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if (IsFrontBufferAvailable)
-                AttachRenderTarget(true); // might not succeed
+                AttachRenderTarget();
             else
-                // need to keep old surface attached because it's the only way to get the front buffer active event.
+            {
                 DetachRenderTarget(false, true);
+                _imageSourceValid = false;
+            }
         }
 
-        private void _rendering(object sender, EventArgs e)
+        protected virtual void DetachRenderTarget(bool detatchSurface, bool detatchEvent)
         {
-            if (root == null) return;
-
-            if (IsFrontBufferAvailable)
+            if (detatchSurface && _imageSourceValid)
             {
-                /*if (MogreWpf.Interop.D3D9RenderSystem.IsDeviceLost(_renderWindow))
-                {
-                    _renderWindow.update(); // try restore
-                    _reloadRenderTargetTime = -1;
-
-                    if (MogreWpf.Interop.D3D9RenderSystem.IsDeviceLost(_renderWindow))
-                        return;
-                }*/
-
-                long durationTicks = ResizeRenderTargetDelay.TimeSpan.Ticks;
-
-                // if the new next ReInitRenderTarget() interval is up
-                if (((reloadRenderTargetTime < 0) || (durationTicks <= 0))
-                    // negative time will be reloaded immediatly
-                    ||
-                    ((reloadRenderTargetTime > 0) &&
-                     (Environment.TickCount >= (reloadRenderTargetTime + durationTicks))))
-                {
-                    ReInitRenderTarget();
-                }
-
-                if (!imageSourceValid)
-                    AttachRenderTarget(false);
-
                 Lock();
-                RenderFrame();
-                AddDirtyRect(new Int32Rect(0, 0, PixelWidth, PixelHeight));
+                SetBackBuffer(D3DResourceType.IDirect3DSurface9, IntPtr.Zero);
                 Unlock();
+
+                _imageSourceValid = false;
             }
         }
 
-        private void OnFrameRateChanged(int? newFrameRate)
+
+        public void RenderLoop()
         {
-            bool wasAttached = eventAttatched;
-            UpdateEvents(false);
 
-            if (newFrameRate == null)
+            //System.Windows.Forms.Application.DoEvents();
+
+            while (!root.endRenderingQueued())
             {
-                if (timer != null)
-                {
-                    timer.Tick -= _rendering;
-                    timer.Stop();
-                    timer = null;
-                }
-            }
-            else
-            {
-                if (timer == null)
-                    timer = new DispatcherTimer();
+                Lock();
 
-                timer.Interval = new TimeSpan(1000 / newFrameRate.Value);
-                timer.Start();
-            }
+                root.renderOneFrame();
 
-            if (wasAttached)
-                UpdateEvents(true);
+                AddDirtyRect(new Int32Rect(0, 0, PixelWidth, PixelHeight));
+
+                Unlock();
+
+                Dispatcher.Invoke(() => { }, DispatcherPriority.Background);
+            }
+        }
+
+        public void Dispose()
+        {
+            root.queueEndRendering();
+            CompositorManager.getSingleton().removeAll();
+            GC.Collect();
         }
     }
 }

@@ -36,8 +36,9 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Ogre">
-      <HintPath>..\..\..\3D\Ogre 3D\ogre-14.3.0\build\csharp\Ogre\Ogre\bin\x64\Debug\Ogre.dll</HintPath>
+    <Reference Include="Ogre, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\3D\Ogre 3D\Ferramentas\ogre-sdk-v14.3.1-msvc142-x64\lib\cli\ogre-sharp-14.3.1\Ogre.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />

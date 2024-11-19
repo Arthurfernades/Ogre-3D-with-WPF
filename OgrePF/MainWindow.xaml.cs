@@ -1,6 +1,7 @@
-﻿using OgreEngine;
+﻿using org.ogre;
+using System;
 using System.Windows;
-
+using System.Windows.Media;
 
 namespace OgrePF
 {
@@ -11,23 +12,35 @@ namespace OgrePF
     {
         public MainWindow()
         {
-            App.Current.Exit += Current_Exit;
-
             InitializeComponent();
-        }
-
-        void Current_Exit(object sender, ExitEventArgs e)
-        {
-            RenterTargetControl.Source = null;
-
-            ogreImage.Dispose();
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            ogreImage = (OgreImage)RenterTargetControl.Source;
-            ogreImage.InitOgreAsync();
+            OgreSource.Initialize();
+            OgreSource.InitRenderTarget();
+            OgreSource.AttachRenderTarget();
+            CompositionTarget.Rendering += OnRendering;
+        }
+        private void OnRendering(object sender, EventArgs e)
+        {
+            OgreSource.RenderLoop();
+        }
 
+        private void Window_Closed(object sender, EventArgs e)
+        {
+            OgreSource.Dispose();
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+            CompositionTarget.Rendering -= OnRendering;
+        }
+
+        private void OgreImage_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            OgreSource.ViewportSize = e.NewSize;
         }
     }
 }

@@ -5,11 +5,11 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:OgreEng="clr-namespace:OgreEngine;assembly=OgreEngine"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800" Loaded="Window_Loaded">
+        Title="MainWindow" Height="450" Width="800" Loaded="Window_Loaded" Closed="Window_Closed">
     <Grid>
-        <Image x:Name="RenterTargetControl" Stretch="Fill">
+        <Image x:Name="OgreImage" MinHeight="1" MinWidth="1" Margin="0" FocusVisualStyle="{x:Null}" Opacity="0.5" SizeChanged="OgreImage_SizeChanged">
             <Image.Source>
-                <OgreEng:OgreImage x:Name="ogreImage"/>
+                <OgreEng:OgreImage x:Name="OgreSource"/>
             </Image.Source>
         </Image>
     </Grid>
