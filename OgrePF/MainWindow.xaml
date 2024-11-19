@@ -12,5 +12,6 @@
                 <OgreEng:OgreImage x:Name="ogreImage"/>
             </Image.Source>
         </Image>
+        <ContentControl Content="ContentControl" HorizontalAlignment="Left" Margin="562,-25,0,0" VerticalAlignment="Top"/>
     </Grid>
 </Window>

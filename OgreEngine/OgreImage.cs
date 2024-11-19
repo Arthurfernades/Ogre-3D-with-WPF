@@ -6,8 +6,6 @@ using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
-using SharpDX.Direct3D11;
-using SharpDX.DXGI;
 using org.ogre;
 
 namespace OgreEngine
@@ -20,7 +18,7 @@ namespace OgreEngine
         private Root root;
         private TexturePtr texture;
         private RenderWindow renderWindow;
-        private Camera camera;
+        private org.ogre.Camera camera;
         private Viewport viewport;
         private SceneManager sceneManager;
         private RenderTarget renTarget;
@@ -45,7 +43,17 @@ namespace OgreEngine
             get { return renderWindow; }
         }
 
-        public Camera Camera
+        public RenderTarget RenderTarget
+        {
+            get { return renTarget; }
+        }
+
+        public TexturePtr Texture
+        {
+            get { return texture; }
+        }
+
+        public org.ogre.Camera Camera
         {
             get { return camera; }
         }
@@ -93,7 +101,7 @@ namespace OgreEngine
 
         public bool InitOgre()
         {
-            return _InitOgre();
+            return true;//_InitOgre();
         }
 
         public Thread InitOgreAsync(ThreadPriority priority, RoutedEventHandler completeHandler)
@@ -115,7 +123,7 @@ namespace OgreEngine
             InitOgreAsync(ThreadPriority.Normal, null);
         }
 
-        protected bool _InitOgre()
+        public void _InitOgre()
         {
             lock (this)
             {
@@ -133,8 +141,10 @@ namespace OgreEngine
 
                 // Configures the application and creates the Window a window HAS to be created, even though we'll never use it.
                 //
-                if (!FindRenderSystem())
-                    return false;
+                //if (!FindRenderSystem())
+                //    continue;
+
+                FindRenderSystem();
 
                 RenderSystemConfig();
 
@@ -161,11 +171,11 @@ namespace OgreEngine
 
                         AttachRenderTarget(true);
 
-                        OnFrameRateChanged(this.FrameRate);
+                        //OnFrameRateChanged(this.FrameRate);
 
                         currentThread = null;
                     });
-                return true;
+                //return true;
             }
         }
 
@@ -327,21 +337,14 @@ namespace OgreEngine
                 org.ogre.PixelFormat.PF_R8G8B8A8,
                 (int)TextureUsage.TU_RENDERTARGET
             );
-
             renTarget = texture.getBuffer().getRenderTarget();
-
             reloadRenderTargetTime = 0;
         }
-
-        
 
         protected virtual void AttachRenderTarget(bool attachEvent)
         {
             if (!imageSourceValid)
             {
-                Lock();
-
-                //IntPtr surface = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(IntPtr)));
 
                 try
                 {
@@ -353,22 +356,28 @@ namespace OgreEngine
                         GCHandle handle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
 
                         root.getRenderSystem().getCustomAttribute("D3DDEVICE", handle.AddrOfPinnedObject());
+
+                        //renderWindow.getCustomAttribute("D3DDEVICE", handle.AddrOfPinnedObject());
+
+                        //renderWindow.getCustomAttribute("WINDOW", handle.AddrOfPinnedObject());
+                        
+                        //renTarget.getCustomAttribute("DDBACKBUFFER", surface);
+
                         surface = (IntPtr) BitConverter.ToInt64(buffer,0);
 
-                        /*_renderWindow.getCustomAttribute("D3DDEVICE", surface2);
+                        //1 - criar uma textura directx9
+                        //2 - compartilhar o handle do dx9 com o dx11 do ogro
+                        //3 - chamar o setbackbuffer com a textura do 9
 
-                        _renderWindow.getCustomAttribute("WINDOW", surface3);*/
-
-                        //_renTarget.getCustomAttribute("WINDOW", surface); //Erro ao encontrar a String de parâmetro
-
+                        Lock();
                         SetBackBuffer(D3DResourceType.IDirect3DSurface9, surface);
+                        Unlock();
 
                         imageSourceValid = true;
                     }
                 }
                 finally
                 {
-                    Unlock();
                 }
             }
 

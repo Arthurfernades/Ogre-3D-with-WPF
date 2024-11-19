@@ -36,8 +36,9 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Ogre">
-      <HintPath>..\..\..\3D\Ogre 3D\ogre-14.3.0\build\csharp\Ogre\Ogre\bin\x64\Debug\Ogre.dll</HintPath>
+    <Reference Include="Ogre, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\OgreEngine\bin\x64\Debug\Ogre.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -59,6 +60,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="SharpDXWindow.xaml.cs">
+      <DependentUpon>SharpDXWindow.xaml</DependentUpon>
+    </Compile>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -71,6 +75,10 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="SharpDXWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">
@@ -102,6 +110,10 @@
     <ProjectReference Include="..\OgreEngine\OgreEngine.csproj">
       <Project>{bb97afa5-7dab-4b4f-a997-5cb9ddc58ed2}</Project>
       <Name>OgreEngine</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SharpDXLib\SharpDXLib.csproj">
+      <Project>{98964398-892e-4d5c-8d51-0014cb52ae34}</Project>
+      <Name>SharpDXLib</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
