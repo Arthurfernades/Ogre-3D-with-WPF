@@ -38,7 +38,7 @@
   <ItemGroup>
     <Reference Include="Ogre, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\3D\Ogre 3D\Ferramentas\ogre-sdk-v14.3.1-msvc142-x64\lib\cli\ogre-sharp-14.3.1\Ogre.dll</HintPath>
+      <HintPath>..\..\..\3D\Ogre 3D\Ferramentas\Ogre-14.3.2\build\csharp\Ogre\bin\x64\Debug\Ogre.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -90,7 +90,9 @@
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
+    <Resource Include="ogre_cave.png" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>

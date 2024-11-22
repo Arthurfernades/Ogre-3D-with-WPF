@@ -41,7 +41,7 @@
   <ItemGroup>
     <Reference Include="Ogre, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\3D\Ogre 3D\Ferramentas\ogre-sdk-v14.3.1-msvc142-x64\lib\cli\ogre-sharp-14.3.1\Ogre.dll</HintPath>
+      <HintPath>..\..\..\3D\Ogre 3D\Ferramentas\Ogre-14.3.2\build\csharp\Ogre\bin\x64\Debug\Ogre.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
@@ -58,7 +58,7 @@
   <ItemGroup>
     <Compile Include="OgreImage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Enum\TextureUsage.cs" />
+    <Compile Include="Enum\Enum.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

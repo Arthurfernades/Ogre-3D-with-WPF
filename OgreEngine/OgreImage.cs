@@ -1,16 +1,23 @@
-﻿using org.ogre;
+﻿using Microsoft.Win32;
+using org.ogre;
 using System;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Interop;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 
 namespace OgreEngine
 {
     public partial class OgreImage : D3DImage
     {
-        private static Root root;
+        public Root root;
 
-        RenderWindow renderWindow;
+        private RenderWindow renderWindow;
 
         private RenderTarget renderTarget;
 
@@ -20,15 +27,28 @@ namespace OgreEngine
 
         private TexturePtr texturePtr;
 
+        private SceneManager scnMgr;
+
         private Camera cam;
 
-        private DispatcherTimer timer;
+        private DispatcherTimer renderTimer;
+
+        private CameraMan camman;
+
+        private float distance = 100f;
+
+        public void setCameraDistance()
+        {
+            distance++;
+            camman.setYawPitchDist(new Radian(0), new Radian(0.3f), distance);
+            InitRenderTarget();
+        }
 
         #region ViewportSize Property
 
         public static readonly DependencyProperty ViewportSizeProperty =
             DependencyProperty.Register("ViewportSize", typeof(Size), typeof(OgreImage),
-                                        new PropertyMetadata(new Size(100, 100), OnViewportProperyChanged)
+                                        new PropertyMetadata(new Size(1920, 1080), OnViewportProperyChanged)
                 );
 
         private static void OnViewportProperyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -47,9 +67,11 @@ namespace OgreEngine
         private Viewport vp;
 
 
-        private bool _imageSourceValid;
+        private bool isImageSourceValid;
 
-        public void Initialize()
+        public bool isInited = false;
+
+        public void Initialize(bool createDefaultScene)
         {
             root = new Root();
 
@@ -126,7 +148,7 @@ namespace OgreEngine
             }
 
             renderSystem.setConfigOption("Full Screen", "No");
-            renderSystem.setConfigOption("Video Mode", "800 x 600 @ 32-bit colour");
+            renderSystem.setConfigOption("Video Mode", "1920 x 1080 @ 32-bit colour");
             renderSystem.setConfigOption("Allow NVPerfHUD", "No");
             renderSystem.setConfigOption("FSAA", "0");
             renderSystem.setConfigOption("Floating-point mode", "Consistent");
@@ -162,8 +184,8 @@ namespace OgreEngine
 
             renderWindow = root.createRenderWindow(
                 "Window Forms Ogre", //Render Targer name
-                1, // Width
-                1, // Height
+                0, // Width
+                0, // Height
                 false, // Windowed mode
                 miscParams
                 );
@@ -172,16 +194,81 @@ namespace OgreEngine
 
             #endregion
 
-            SceneManager scnMgr = root.createSceneManager();
+            ResourceGroupManager.getSingleton().initialiseAllResourceGroups();                          
 
-            //var shadergen = ShaderGenerator.getSingleton(); //Usado somente com DX11
-            //shadergen.addSceneManager(scnMgr);
+            //ResourceGroupManager.getSingleton()
 
-            #region Ambient Light
+            #region Create Scene
 
-            scnMgr.setAmbientLight(new ColourValue(.1f, .1f, .1f));
+            scnMgr = root.createSceneManager();
+
+            if (createDefaultScene)
+            {
+
+                #region Shader Generator (DX11)
+
+                //Usado somente com DX11
+                //var shadergen = ShaderGenerator.getSingleton();
+                //shadergen.addSceneManager(scnMgr);
+
+                #endregion
+
+                #region Shadow
+
+                /*scnMgr.setShadowTechnique(ShadowTechnique.SHADOWTYPE_TEXTURE_MODULATIVE_INTEGRATED);
+                scnMgr.setShadowTexturePixelFormat(org.ogre.PixelFormat.PF_DEPTH16);
+                scnMgr.setShadowColour(new ColourValue(0.5f, 0.5f, 0.5f));
+                scnMgr.setShadowTextureSize(1024);
+                scnMgr.setShadowTextureCount(1);
+                scnMgr.setShadowDirLightTextureOffset(0);
+                scnMgr.setShadowFarDistance(50);
+                scnMgr.setShadowCameraSetup(LiSPSMShadowCameraSetup.create());*/
+
+                #endregion
+
+                #region Ambient Light
+
+                scnMgr.setAmbientLight(new ColourValue(0.1f, 0.1f, 0.1f));
+
+                #endregion
+
+                #region Camera
+
+                cam = scnMgr.createCamera("myCam");
+                cam.setAutoAspectRatio(true);
+                cam.setNearClipDistance(5);
+                var camnode = scnMgr.getRootSceneNode().createChildSceneNode();
+                camnode.attachObject(cam);
+
+                #endregion
+
+                #region Camera Man
+
+                camman = new CameraMan(camnode);
+                camman.setStyle(CameraStyle.CS_ORBIT);
+                camman.setYawPitchDist(new Radian(0), new Radian(0.1f), 20f);
+
+                #endregion
+
+                #region Viewport
+
+                //só usar se for renderizar direto na renderwindow
+                //vp = renderWindow.addViewport(cam);
+                //vp.setBackgroundColour(new ColourValue(1f, 1f, 1f, 1));
+
+                #endregion
+
+            }
 
             #endregion
+
+            isInited = true;
+
+            IsFrontBufferAvailableChanged += _isFrontBufferAvailableChanged;
+        }
+
+        public void CreateSceneDefault()
+        {
 
             #region Light
 
@@ -192,40 +279,15 @@ namespace OgreEngine
 
             #endregion
 
-            #region Camera
-
-            var cam = scnMgr.createCamera("myCam");
-            cam.setAutoAspectRatio(true);
-            cam.setNearClipDistance(5);
-            var camnode = scnMgr.getRootSceneNode().createChildSceneNode();
-            camnode.attachObject(cam);
-
-            #endregion
-
-            #region Camera Man
-
-            var camman = new CameraMan(camnode);
-            camman.setStyle(CameraStyle.CS_ORBIT);
-            camman.setYawPitchDist(new Radian(0), new Radian(0.3f), 15f);
-
-            #endregion
-
-            #region Viewport
-
-            vp = renderWindow.addViewport(cam);
-            vp.setBackgroundColour(new ColourValue(.3f, .3f, .3f));
-
-            #endregion
-
             #region Entity
 
             var ent = scnMgr.createEntity("Sinbad.mesh");
             var node = scnMgr.getRootSceneNode().createChildSceneNode();
+            node.setPosition(0, -2.3f, 0);
             node.attachObject(ent);
 
             #endregion
 
-            IsFrontBufferAvailableChanged += _isFrontBufferAvailableChanged;
         }
 
         public void InitRenderTarget()
@@ -234,18 +296,25 @@ namespace OgreEngine
             DisposeRenderTarget();
 
             texturePtr = TextureManager.getSingleton().createManual(
-                "SharedTexture",
-                ResourceGroupManager.DEFAULT_RESOURCE_GROUP_NAME,
-                TextureType.TEX_TYPE_2D,
-                (uint)ViewportSize.Width,
-                (uint)ViewportSize.Height,
-                64,
-                0,
-                org.ogre.PixelFormat.PF_R8G8B8A8,
-                (int)TextureUsage.TU_RENDERTARGET);
+                        "Ogre Render",
+                        ResourceGroupManager.DEFAULT_RESOURCE_GROUP_NAME,
+                        TextureType.TEX_TYPE_2D,
+                        (uint)ViewportSize.Width,
+                        (uint)ViewportSize.Height,
+                        32,
+                        0,
+                        org.ogre.PixelFormat.PF_R8G8B8A8,
+                        (int)TextureUsage.TU_RENDERTARGET);
 
             renderTarget = texturePtr.getBuffer().getRenderTarget();
-            renderTarget.addViewport(cam);
+
+            // Esse é o código pra deixar o fundo transparente
+            renderTarget.removeAllViewports();
+            vp = renderTarget.addViewport(cam);
+            vp.setBackgroundColour(new ColourValue(0f, 0f, 0f, 0f));
+            vp.setClearEveryFrame(true);
+            vp.setOverlaysEnabled(false);
+
         }
 
         protected void DisposeRenderTarget()
@@ -261,7 +330,8 @@ namespace OgreEngine
             if (texturePtr != null)
             {
                 TextureManager.getSingleton().remove(texturePtr.getHandle());
-                texturePtr.Dispose();
+                GC.SuppressFinalize(texturePtr);
+                //texturePtr.Dispose();
                 texturePtr = null;
             }
         }
@@ -270,25 +340,20 @@ namespace OgreEngine
 
         public virtual unsafe void AttachRenderTarget()
         {
+            Lock();
             try
             {
-                /*
-                var surface = IntPtr.Zero;
+                IntPtr surface;
 
-                byte[] buffer = new byte[sizeof(IntPtr)];
+                renderTarget.getCustomAttribute("DDBACKBUFFER", out surface);
 
-                GCHandle handle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
-
-                renderTarget.getCustomAttribute("DDBACKBUFFER", handle.AddrOfPinnedObject());
-                surface = (IntPtr)BitConverter.ToInt64(buffer, 0);
-                */
-
-                uint p = renderTarget.getCustomAttribute("DDBACKBUFFER");
-                var surface = new IntPtr(p);
-
-
-                Lock();
                 SetBackBuffer(D3DResourceType.IDirect3DSurface9, surface, true);
+
+                isImageSourceValid = true;
+            }
+            catch (Exception ex)
+            {
+                Debug.Print("Erro AttachRenderTarget: " + ex);
             }
             finally
             {
@@ -303,40 +368,38 @@ namespace OgreEngine
             else
             {
                 DetachRenderTarget(false, true);
-                _imageSourceValid = false;
+                isImageSourceValid = false;
             }
         }
 
         protected virtual void DetachRenderTarget(bool detatchSurface, bool detatchEvent)
         {
-            if (detatchSurface && _imageSourceValid)
+            if (detatchSurface && isImageSourceValid)
             {
                 Lock();
                 SetBackBuffer(D3DResourceType.IDirect3DSurface9, IntPtr.Zero);
                 Unlock();
 
-                _imageSourceValid = false;
+                isImageSourceValid = false;
             }
         }
 
-
-        public void RenderLoop()
+        public void RenderOneFrame()
         {
-
-            //System.Windows.Forms.Application.DoEvents();
-
-            while (!root.endRenderingQueued())
+            if (root != null)
             {
-                Lock();
-
                 root.renderOneFrame();
-
-                AddDirtyRect(new Int32Rect(0, 0, PixelWidth, PixelHeight));
-
-                Unlock();
-
-                Dispatcher.Invoke(() => { }, DispatcherPriority.Background);
             }
+
+            Lock();
+            AddDirtyRect(new Int32Rect(0, 0, (int)ViewportSize.Width, (int)ViewportSize.Height));
+            Unlock();
+        }
+
+        public void StopRendering()
+        {
+            renderTimer?.Stop();
+            renderTimer = null;
         }
 
         public void Dispose()
@@ -345,5 +408,106 @@ namespace OgreEngine
             CompositorManager.getSingleton().removeAll();
             GC.Collect();
         }
+
+        #region export image
+
+        public static string CriaResourceGroup(string name)
+        {
+            //Cria
+            if (!ResourceGroupManager.getSingleton().resourceGroupExists(name))
+                ResourceGroupManager.getSingleton().createResourceGroup(name);
+
+            //Inicializa
+            if (!ResourceGroupManager.getSingleton().isResourceGroupInitialised(name))
+                ResourceGroupManager.getSingleton().initialiseResourceGroup(name);
+
+            //Carrega
+            if (!ResourceGroupManager.getSingleton().isResourceGroupLoaded(name))
+                ResourceGroupManager.getSingleton().loadResourceGroup(name);
+
+            return name;
+        }
+
+        public unsafe void SalvaImagem(int vWidth = 800, int vHeight = 800)
+        {
+            string vArquivo = @"C:\Users\Admin\Pictures\output.png";
+
+            //Tive que criar um resource group diferente para controlar a alocação de memória
+            if (!ResourceGroupManager.getSingleton().resourceGroupExists("ControleRAMImg"))
+                CriaResourceGroup("ControleRAMImg");
+
+            uint w;
+            uint h;
+
+            if (vWidth == 0 || vHeight == 0)
+            {
+                w = (uint)this.Width;
+                h = (uint)this.Height;
+            }
+            else
+            {
+                w = (uint)vWidth;
+                h = (uint)vHeight;
+            }
+
+            TexturePtr renderTexture;
+            string vRenderName = "renderTex";
+
+            renderTexture = TextureManager.getSingleton().createManual(vRenderName,
+                            "ControleRAMImg",
+                            TextureType.TEX_TYPE_2D, w, h, 32, 0,
+                            org.ogre.PixelFormat.PF_A8R8G8B8,
+                            (int)TextureUsage.TU_RENDERTARGET, null, false, 8, "[Quality]");
+
+            //Esse método funciona sem alocação de memória
+            //Talvez seja mais rápido
+            using (HardwarePixelBufferPtr buffer = renderTexture.getBuffer())
+            {
+                using (RenderTexture renderTextureX = buffer.getRenderTarget())
+                {
+                    //Create pixelbox
+                    byte[] data = new byte[PixelUtil.getMemorySize((uint)w, (uint)h, 1, renderTexture.getFormat())];
+                    //Informa o computador o quanto de memoria será alocada
+                    GCHandle gch = GCHandle.Alloc(data, GCHandleType.Pinned);
+                    try
+                    {
+                        //Pega o endereço de memoria
+                        IntPtr dataPtr = gch.AddrOfPinnedObject();
+                        PixelBox finalPicturePixelBox = new PixelBox(w, h, 1, renderTexture.getFormat(), dataPtr);
+
+                        // Remove todas as viewports anteriores
+                        renderTextureX.removeAllViewports();
+                        //Adiciona uma viewport com a camera principal
+                        renderTextureX.addViewport(cam);
+
+                        // Desativa os overlays
+                        Viewport viewport = renderTextureX.getViewport(0);
+                        viewport.setBackgroundColour(new ColourValue(0f, 0f, 0f, 0f));
+                        viewport.setClearEveryFrame(true);
+                        viewport.setOverlaysEnabled(false);
+                        //cam.getViewport().setOverlaysEnabled(false);
+
+                        //Renderiza
+                        renderTextureX.update();
+
+                        //Escreve o arquivo no disco
+                        renderTextureX.writeContentsToFile(vArquivo);
+                    }
+                    finally
+                    {
+                        //Desaloca a memoria
+                        gch.Free();
+                    }
+                }
+
+                //Para liberar a textura
+                TextureManager.getSingleton().remove(renderTexture.getHandle());
+                renderTexture.Dispose();
+
+
+            }
+        }
+
+        #endregion
     }
 }
