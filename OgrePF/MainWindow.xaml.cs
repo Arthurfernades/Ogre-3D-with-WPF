@@ -1,9 +1,6 @@
 ﻿using OgreEngine;
-using org.ogre;
-using System;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media;
 
 namespace OgrePF
 {
@@ -16,6 +13,10 @@ namespace OgrePF
 
         private bool isCtrlPressed = false;
 
+        private bool isLeftMouseButtonClicked = false, isRightMouseButtonClicked = false;
+
+        private double lastXAxis, lastYAxis;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -23,6 +24,8 @@ namespace OgrePF
             this.PreviewKeyDown += Window_PreviewKeyUp;
             this.PreviewKeyUp += Window_PreviewKeyDown;
             this.MouseWheel += Window_MouseWheel;
+            lastXAxis = 0;
+            lastYAxis = 0;
         }
 
 
@@ -31,7 +34,6 @@ namespace OgrePF
 
             img.Source = d3dImage;
             d3dImage.Initialize(true);
-
             UpdateOgreSize();
             d3dImage.CreateSceneDefault();
             d3dImage.RenderOneFrame();
@@ -61,9 +63,7 @@ namespace OgrePF
             if (d3dImage.isInited)
             {
                 d3dImage.ViewportSize = new Size(this.ActualWidth - 20, this.ActualHeight - 20);
-                d3dImage.InitRenderTarget();
-                d3dImage.AttachRenderTarget();
-                d3dImage.RenderOneFrame();
+                updateOgre();
             }
         }
 
@@ -86,15 +86,88 @@ namespace OgrePF
             {
                 if (e.Delta > 0)
                 {
-                    d3dImage.setCameraDistance();
+                    d3dImage.setCameraDistance(true);                    
+
                 }
                 else
                 {
-                    // Scroll down
-                    MessageBox.Show("Scroll down with Ctrl pressed! " + e.Delta);
+                    d3dImage.setCameraDistance(false);
                 }
+
+                updateOgre();
             }
         }
 
+        // Do after any event that change Ogre
+        private void updateOgre()
+        {
+            d3dImage.InitRenderTarget();
+            d3dImage.AttachRenderTarget();
+            d3dImage.RenderOneFrame();
+        }
+
+        private void img_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            isLeftMouseButtonClicked = true;
+        }
+
+        private void img_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            isRightMouseButtonClicked = true;
+        }
+
+        private void img_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            isRightMouseButtonClicked = false;
+        }
+
+        private void img_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            isLeftMouseButtonClicked = false;
+        }
+
+        private void img_MouseMove(object sender, MouseEventArgs e)
+        {
+            double xAxis = e.GetPosition(img).X;
+            double yAxis = e.GetPosition(img).Y;
+
+            if (isLeftMouseButtonClicked)
+            {
+                bool growX;                                            
+
+                if((xAxis - lastXAxis) > 0)
+                {
+                    growX = true;
+                }else 
+                {
+                    growX = false;
+                }                
+
+                d3dImage.setCameraAngleX(growX);
+
+                updateOgre();
+            }
+
+            if(isRightMouseButtonClicked)
+            {
+                bool growY;
+
+                if ((yAxis - lastYAxis) > 0)
+                {
+                    growY = true;
+                }
+                else
+                {
+                    growY = false;
+                }
+
+                d3dImage.setCameraAngleY(growY);
+
+                updateOgre();
+            }
+
+            lastXAxis = xAxis;
+            lastYAxis = yAxis;
+        }
     }
 }

@@ -39,6 +39,9 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.Wpf.Interop.DirectX">
+      <HintPath>..\..\..\3D\Ogre 3D\Ferramentas\WPFDXInterop\src\x64\Debug\Microsoft.Wpf.Interop.DirectX.dll</HintPath>
+    </Reference>
     <Reference Include="Ogre, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\3D\Ogre 3D\Ferramentas\Ogre-14.3.2\build\csharp\Ogre\bin\x64\Debug\Ogre.dll</HintPath>

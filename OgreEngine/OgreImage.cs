@@ -1,14 +1,9 @@
-﻿using Microsoft.Win32;
-using org.ogre;
+﻿using org.ogre;
 using System;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Windows;
-using System.Windows.Input;
 using System.Windows.Interop;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 
 namespace OgreEngine
@@ -35,13 +30,66 @@ namespace OgreEngine
 
         private CameraMan camman;
 
-        private float distance = 100f;
+        private float distance, xAxis, yAxis;
 
-        public void setCameraDistance()
+        private Radian yaw;
+
+        private Radian pitch;
+
+        public OgreImage()
         {
-            distance++;
-            camman.setYawPitchDist(new Radian(0), new Radian(0.3f), distance);
-            InitRenderTarget();
+            distance = 20f;
+
+            xAxis = 0;
+
+            yAxis = 0;
+
+            yaw = new Radian(xAxis);
+
+            pitch = new Radian(yAxis);
+    }
+
+        public void setCameraDistance(bool approaching)
+        {
+            if (approaching)
+            {
+                distance -= 0.2f;
+
+            } else
+            {
+                distance += 0.2f;
+            }
+
+            camman.setYawPitchDist(new Radian(xAxis), new Radian(yAxis), distance);
+        }
+
+        public void setCameraAngleX(bool growX)
+        {
+            if(!growX)
+            {
+                xAxis += 0.05f;
+
+            } else
+            {
+                xAxis -= 0.05f;
+            }            
+
+            camman.setYawPitchDist(new Radian(xAxis), new Radian(yAxis), distance);
+        }
+
+        public void setCameraAngleY(bool growY)
+        {
+            if (growY)
+            {
+                yAxis += 0.05f;
+
+            }
+            else
+            {
+                yAxis -= 0.05f;
+            }
+
+            camman.setYawPitchDist(new Radian(xAxis), new Radian(yAxis), distance);
         }
 
         #region ViewportSize Property
@@ -121,7 +169,7 @@ namespace OgreEngine
 
             foreach (RenderSystem rs in root.getAvailableRenderers())
             {
-                if (rs == null) continue;
+                if (rs           == null) continue;
 
                 if (rs.getName() == "Direct3D9 Rendering Subsystem") // Se mudar para o Direct3D11 tem que ativar o ShaderGenerator
                 {
@@ -151,8 +199,8 @@ namespace OgreEngine
             renderSystem.setConfigOption("Video Mode", "1920 x 1080 @ 32-bit colour");
             renderSystem.setConfigOption("Allow NVPerfHUD", "No");
             renderSystem.setConfigOption("FSAA", "0");
-            renderSystem.setConfigOption("Floating-point mode", "Consistent");
-            renderSystem.setConfigOption("Resource Creation Policy", "Create on active device");
+            //renderSystem.setConfigOption("Floating-point mode", "Consistent");
+            //renderSystem.setConfigOption("Resource Creation Policy", "Create on active device");
             renderSystem.setConfigOption("VSync", "No");
 
             #endregion
@@ -246,7 +294,7 @@ namespace OgreEngine
 
                 camman = new CameraMan(camnode);
                 camman.setStyle(CameraStyle.CS_ORBIT);
-                camman.setYawPitchDist(new Radian(0), new Radian(0.1f), 20f);
+                camman.setYawPitchDist(yaw, pitch, distance);
 
                 #endregion
 
@@ -303,8 +351,8 @@ namespace OgreEngine
                         (uint)ViewportSize.Height,
                         32,
                         0,
-                        org.ogre.PixelFormat.PF_R8G8B8A8,
-                        (int)TextureUsage.TU_RENDERTARGET);
+                        PixelFormat.PF_R8G8B8A8,
+                        (int)TextureUsage.TU_RENDERTARGET); // | (int)TextureUsage.TU_SHARED_RESOURCE
 
             renderTarget = texturePtr.getBuffer().getRenderTarget();
 
@@ -314,7 +362,6 @@ namespace OgreEngine
             vp.setBackgroundColour(new ColourValue(0f, 0f, 0f, 0f));
             vp.setClearEveryFrame(true);
             vp.setOverlaysEnabled(false);
-
         }
 
         protected void DisposeRenderTarget()
@@ -338,14 +385,16 @@ namespace OgreEngine
 
 
 
-        public virtual unsafe void AttachRenderTarget()
+        public void AttachRenderTarget()
         {
             Lock();
             try
             {
                 IntPtr surface;
 
-                renderTarget.getCustomAttribute("DDBACKBUFFER", out surface);
+                renderTarget.getCustomAttribute("DDBACKBUFFER", out surface); //DX9
+
+                //renderTarget.getCustomAttribute("SHAREDHANDLE", out surface); //DX11
 
                 SetBackBuffer(D3DResourceType.IDirect3DSurface9, surface, true);
 
@@ -428,7 +477,7 @@ namespace OgreEngine
             return name;
         }
 
-        public unsafe void SalvaImagem(int vWidth = 800, int vHeight = 800)
+        public unsafe void SalvaImagem(int vWidth = 1920, int vHeight = 1080)
         {
             string vArquivo = @"C:\Users\Admin\Pictures\output.png";
 
@@ -439,7 +488,7 @@ namespace OgreEngine
             uint w;
             uint h;
 
-            if (vWidth == 0 || vHeight == 0)
+            if (vWidth           == 0 || vHeight == 0)
             {
                 w = (uint)this.Width;
                 h = (uint)this.Height;
