@@ -32,22 +32,36 @@ namespace OgreEngine
 
         private float distance, xAxis, yAxis;
 
+        private float xAxisEntity, yAxisEntity, zAxisEntity;
+
         private Radian yaw;
 
         private Radian pitch;
 
+        private SceneNode entityNode;
+
+        private Entity entity;
+
         public OgreImage()
         {
+            #region Camera Man initial config
+
             distance = 20f;
-
             xAxis = 0;
-
             yAxis = 0;
-
             yaw = new Radian(xAxis);
-
             pitch = new Radian(yAxis);
-    }
+
+            #endregion
+
+            #region Entity position
+
+            xAxisEntity = 0;
+            yAxisEntity = 0;
+            zAxisEntity = 0;
+
+            #endregion
+        }
 
         public void setCameraDistance(bool approaching)
         {
@@ -90,6 +104,31 @@ namespace OgreEngine
             }
 
             camman.setYawPitchDist(new Radian(xAxis), new Radian(yAxis), distance);
+        }
+
+        public void setEntityPostiton(bool growX, bool growY)
+        {
+            if (growX)
+            {
+                xAxisEntity += 0.05f;
+
+            }
+            else
+            {
+                xAxisEntity -= 0.05f;
+            }
+
+            if (!growY)
+            {
+                yAxisEntity += 0.05f;
+
+            }
+            else
+            {
+                yAxisEntity -= 0.05f;
+            }
+
+            entityNode.setPosition(xAxisEntity, yAxisEntity, zAxisEntity);
         }
 
         #region ViewportSize Property
@@ -329,10 +368,10 @@ namespace OgreEngine
 
             #region Entity
 
-            var ent = scnMgr.createEntity("Sinbad.mesh");
-            var node = scnMgr.getRootSceneNode().createChildSceneNode();
-            node.setPosition(0, -2.3f, 0);
-            node.attachObject(ent);
+            entity = scnMgr.createEntity("DamagedHelmet.mesh");
+            entityNode = scnMgr.getRootSceneNode().createChildSceneNode();
+            entityNode.setPosition(xAxisEntity, yAxisEntity, zAxisEntity);
+            entityNode.attachObject(entity);
 
             #endregion
 

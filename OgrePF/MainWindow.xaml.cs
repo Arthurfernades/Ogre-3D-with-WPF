@@ -1,4 +1,5 @@
 ﻿using OgreEngine;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Input;
 
@@ -13,7 +14,8 @@ namespace OgrePF
 
         private bool isCtrlPressed = false;
 
-        private bool isLeftMouseButtonClicked = false, isRightMouseButtonClicked = false;
+        private bool isLeftMouseButtonClicked = false, 
+            isRightMouseButtonClicked = false, isMidlleMouseButtonClicked = false;
 
         private double lastXAxis, lastYAxis;
 
@@ -121,6 +123,18 @@ namespace OgrePF
             isRightMouseButtonClicked = false;
         }
 
+        private void img_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Middle)
+                isMidlleMouseButtonClicked = false;
+        }
+
+        private void img_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Middle)
+                isMidlleMouseButtonClicked = true;            
+        }
+
         private void img_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             isLeftMouseButtonClicked = false;
@@ -164,6 +178,35 @@ namespace OgrePF
                 d3dImage.setCameraAngleY(growY);
 
                 updateOgre();
+            }
+
+            if(isMidlleMouseButtonClicked)
+            {
+                bool growX;
+                bool growY;
+
+                if ((xAxis - lastXAxis) > 0)
+                {
+                    growX = true;
+                }
+                else
+                {
+                    growX = false;
+                }
+
+                if ((yAxis - lastYAxis) > 0)
+                {
+                    growY = true;
+                }
+                else
+                {
+                    growY = false;
+                }
+
+                d3dImage.setEntityPostiton(growX, growY);
+
+                updateOgre();
+
             }
 
             lastXAxis = xAxis;
