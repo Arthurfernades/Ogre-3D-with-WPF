@@ -1,5 +1,5 @@
 ﻿using OgreEngine;
-using System.Text.RegularExpressions;
+using System;
 using System.Windows;
 using System.Windows.Input;
 
@@ -19,6 +19,8 @@ namespace OgrePF
 
         private double lastXAxis, lastYAxis;
 
+        private string currentMeshName;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -28,6 +30,7 @@ namespace OgrePF
             this.MouseWheel += Window_MouseWheel;
             lastXAxis = 0;
             lastYAxis = 0;
+            currentMeshName = "robot";
         }
 
 
@@ -129,6 +132,78 @@ namespace OgrePF
                 isMidlleMouseButtonClicked = false;
         }
 
+        private void Window_KeyDown(object sender, KeyEventArgs e)
+        {
+            bool growX, growY;
+
+            switch (e.Key)
+            {
+                case Key.W:
+                    growY = true;
+                    d3dImage.setEntityPostiton(growY, "y");
+                    updateOgre();
+                    break;
+
+                case Key.A:
+                    growX = false;
+                    d3dImage.setEntityPostiton(growX, "x");
+                    updateOgre();
+                    break;
+
+                case Key.S:
+                    growY = false;
+                    d3dImage.setEntityPostiton(growY, "y");
+                    updateOgre();
+                    break;
+
+                case Key.D:
+                    growX = true;
+                    d3dImage.setEntityPostiton(growX, "x");
+                    updateOgre();
+                    break;
+            }            
+        }
+
+        private void Window_KeyUp(object sender, KeyEventArgs e)
+        {
+
+        }
+
+        private void Button_Click_1(object sender, RoutedEventArgs e)
+        {
+            ChangeEntityModel("ogrehead");
+            currentMeshName = "ogrehead";
+        }
+
+        private void Button_Click_2(object sender, RoutedEventArgs e)
+        {
+            ChangeEntityModel("Sinbad");
+            currentMeshName = "Sinbad";
+        }
+
+        private void Button_Click_3(object sender, RoutedEventArgs e)
+        {
+            ChangeEntityModel("dragon");
+            currentMeshName = "dragon";
+        }
+
+        private void Button_Click_4(object sender, RoutedEventArgs e)
+        {
+            ChangeEntityModel("DamagedHelmet");
+            currentMeshName = "DamagedHelmet";
+        }
+
+        private void ChangeEntityModel(string entityModel)
+        {
+            d3dImage.ChangeEntity(entityModel);
+            updateOgre();
+        }
+
+        private void Button_Click_5(object sender, RoutedEventArgs e)
+        {
+            d3dImage.AddEntity(currentMeshName);
+        }
+
         private void img_MouseDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ChangedButton == MouseButton.Middle)
@@ -147,66 +222,19 @@ namespace OgrePF
 
             if (isLeftMouseButtonClicked)
             {
-                bool growX;                                            
+                double deltaX = xAxis - lastXAxis;
+                double deltaY = yAxis - lastYAxis;
 
-                if((xAxis - lastXAxis) > 0)
+                if (Math.Abs(deltaX) > 0.1 || Math.Abs(deltaY) > 0.1)
                 {
-                    growX = true;
-                }else 
-                {
-                    growX = false;
-                }                
+                    bool xMove = Math.Abs(deltaX) > 0.1;
+                    bool yMove = Math.Abs(deltaY) > 0.1;
+                    bool xGrow = deltaX > 0;
+                    bool yGrow = deltaY > 0;
 
-                d3dImage.setCameraAngleX(growX);
-
-                updateOgre();
-            }
-
-            if(isRightMouseButtonClicked)
-            {
-                bool growY;
-
-                if ((yAxis - lastYAxis) > 0)
-                {
-                    growY = true;
+                    d3dImage.setCameraAngle(xMove, yMove, xGrow, yGrow);
+                    updateOgre();
                 }
-                else
-                {
-                    growY = false;
-                }
-
-                d3dImage.setCameraAngleY(growY);
-
-                updateOgre();
-            }
-
-            if(isMidlleMouseButtonClicked)
-            {
-                bool growX;
-                bool growY;
-
-                if ((xAxis - lastXAxis) > 0)
-                {
-                    growX = true;
-                }
-                else
-                {
-                    growX = false;
-                }
-
-                if ((yAxis - lastYAxis) > 0)
-                {
-                    growY = true;
-                }
-                else
-                {
-                    growY = false;
-                }
-
-                d3dImage.setEntityPostiton(growX, growY);
-
-                updateOgre();
-
             }
 
             lastXAxis = xAxis;

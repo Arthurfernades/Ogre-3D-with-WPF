@@ -6,9 +6,14 @@
         xmlns:OgreEng="clr-namespace:OgreEngine;assembly=OgreEngine"
         mc:Ignorable="d"
         Title="AuE Ogre" Height="450" Width="800" 
-        Loaded="Window_Loaded" Unloaded="Window_Unloaded" PreviewKeyUp="Window_PreviewKeyUp" PreviewKeyDown="Window_PreviewKeyDown" MouseWheel="Window_MouseWheel" SizeChanged="Window_SizeChanged" WindowStartupLocation="CenterScreen" Foreground="White" >
+        Loaded="Window_Loaded" Unloaded="Window_Unloaded" PreviewKeyUp="Window_PreviewKeyUp" PreviewKeyDown="Window_PreviewKeyDown" MouseWheel="Window_MouseWheel" SizeChanged="Window_SizeChanged" WindowStartupLocation="CenterScreen" Foreground="White" KeyDown="Window_KeyDown" KeyUp="Window_KeyUp" >
     <Grid>
-        <Image x:Name="img" Stretch="None" Margin="10" Width="Auto" Height="Auto" MouseLeftButtonDown="img_MouseLeftButtonDown" MouseMove="img_MouseMove" MouseLeftButtonUp="img_MouseLeftButtonUp" MouseRightButtonDown="img_MouseRightButtonDown" MouseRightButtonUp="img_MouseRightButtonUp" MouseDown="img_MouseDown" MouseUp="img_MouseUp" />
-        <Button Content="Print" HorizontalAlignment="Left" VerticalAlignment="Top" Height="34" Width="78" Click="Button_Click"/>
+        <Image x:Name="img" Stretch="None" Margin="108,57,20,3" MouseLeftButtonDown="img_MouseLeftButtonDown" MouseMove="img_MouseMove" MouseLeftButtonUp="img_MouseLeftButtonUp" MouseRightButtonDown="img_MouseRightButtonDown" MouseRightButtonUp="img_MouseRightButtonUp" MouseDown="img_MouseDown" MouseUp="img_MouseUp" />
+        <Button Content="Print" Click="Button_Click" Height="34" VerticalAlignment="Top" Margin="388,10,300,0" Width="112"/>
+        <Button Margin="1,174,0,0" Click="Button_Click_1" Content="Ogre Head" Height="35" VerticalAlignment="Top" HorizontalAlignment="Left" Width="100"/>
+        <Button Margin="1,244,0,0" Click="Button_Click_2" Content="Sinbad" Height="35" VerticalAlignment="Top" HorizontalAlignment="Left" Width="100"/>
+        <Button Margin="1,316,0,0" Height="35" VerticalAlignment="Top" Click="Button_Click_3" Content="Dragon" HorizontalAlignment="Left" Width="100"/>
+        <Button Content="Damaged Helmet" Click="Button_Click_4" Margin="0,100,0,0" Width="101" Height="35" VerticalAlignment="Top" HorizontalAlignment="Left"/>
+        <Button Content="Clonar" HorizontalAlignment="Left" Margin="1,380,0,0" VerticalAlignment="Top" Height="35" Width="100" Click="Button_Click_5"/>
     </Grid>
 </Window>

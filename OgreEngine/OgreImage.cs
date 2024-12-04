@@ -5,6 +5,8 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Threading;
+using System.Xml.Linq;
+using Math = System.Math;
 
 namespace OgreEngine
 {
@@ -46,7 +48,7 @@ namespace OgreEngine
         {
             #region Camera Man initial config
 
-            distance = 20f;
+            distance = 150;
             xAxis = 0;
             yAxis = 0;
             yaw = new Radian(xAxis);
@@ -77,55 +79,62 @@ namespace OgreEngine
             camman.setYawPitchDist(new Radian(xAxis), new Radian(yAxis), distance);
         }
 
-        public void setCameraAngleX(bool growX)
+        public static class MathUtils
         {
-            if(!growX)
+            public static double Clamp(double value, double min, double max)
             {
-                xAxis += 0.05f;
+                if (value < min) return min;
+                if (value > max) return max;
+                return value;
+            }
+        }
 
-            } else
+        public void setCameraAngle(bool xMove, bool yMove, bool xGrow, bool yGrow)
+        {            
+            float camSense = 0.02f;
+            float diagonalSense = 2f * (float)Math.Sqrt(3);
+
+            if (xMove && yMove)
             {
-                xAxis -= 0.05f;
-            }            
+                xAxis += (xGrow ? 1 : -1) * camSense * diagonalSense;
+                yAxis += (yGrow ? -1 : 1) * camSense * diagonalSense;
+            }
+            else if (xMove)
+            {
+                xAxis += (xGrow ? 1 : -1) * camSense;
+            }
+            else if (yMove)
+            {
+                yAxis += (yGrow ? -1 : 1) * camSense * 5;
+            }
+
+            xAxis = (float)MathUtils.Clamp(xAxis, -Math.PI, Math.PI);
+            yAxis = (float)MathUtils.Clamp(yAxis, -Math.PI / 2, Math.PI / 2);
 
             camman.setYawPitchDist(new Radian(xAxis), new Radian(yAxis), distance);
         }
 
-        public void setCameraAngleY(bool growY)
+
+        public void setEntityPostiton(bool grow, string axis)
         {
-            if (growY)
+            float sense = 1;
+
+            if (axis == "x")
             {
-                yAxis += 0.05f;
+                if(!grow)
+                    xAxisEntity += sense;
+                else
+                    xAxisEntity -= sense;
 
             }
-            else
-            {
-                yAxis -= 0.05f;
-            }
 
-            camman.setYawPitchDist(new Radian(xAxis), new Radian(yAxis), distance);
-        }
-
-        public void setEntityPostiton(bool growX, bool growY)
-        {
-            if (growX)
+            if (axis == "y")
             {
-                xAxisEntity += 0.05f;
+                if (!grow)
+                    yAxisEntity += sense;
+                else
+                    yAxisEntity -= sense;
 
-            }
-            else
-            {
-                xAxisEntity -= 0.05f;
-            }
-
-            if (!growY)
-            {
-                yAxisEntity += 0.05f;
-
-            }
-            else
-            {
-                yAxisEntity -= 0.05f;
             }
 
             entityNode.setPosition(xAxisEntity, yAxisEntity, zAxisEntity);
@@ -368,13 +377,28 @@ namespace OgreEngine
 
             #region Entity
 
-            entity = scnMgr.createEntity("DamagedHelmet.mesh");
+            entity = scnMgr.createEntity("robot.mesh");
             entityNode = scnMgr.getRootSceneNode().createChildSceneNode();
             entityNode.setPosition(xAxisEntity, yAxisEntity, zAxisEntity);
             entityNode.attachObject(entity);
 
             #endregion
 
+        }
+
+        public void ChangeEntity(string model3D)
+        {
+            scnMgr.destroyEntity(entity);
+            Entity newEntity = entity = scnMgr.createEntity(model3D + ".mesh");
+            entityNode.attachObject(newEntity);
+        }
+
+        public void AddEntity(string model3D)
+        {
+            Entity newEntity = scnMgr.createEntity(model3D + ".mesh");
+            SceneNode newEntityNode = scnMgr.getRootSceneNode().createChildSceneNode();
+            newEntityNode.setPosition(xAxisEntity, yAxisEntity, zAxisEntity);
+            newEntityNode.attachObject(newEntity);
         }
 
         public void InitRenderTarget()
