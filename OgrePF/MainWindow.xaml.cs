@@ -30,7 +30,7 @@ namespace OgrePF
             this.MouseWheel += Window_MouseWheel;
             lastXAxis = 0;
             lastYAxis = 0;
-            currentMeshName = "robot";
+            currentMeshName = "Sinbad";
         }
 
 
@@ -134,12 +134,18 @@ namespace OgrePF
 
         private void Window_KeyDown(object sender, KeyEventArgs e)
         {
-            bool growX, growY;
+            bool growX, growY, growZ;
 
             switch (e.Key)
             {
-                case Key.W:
+                case Key.Space:
                     growY = true;
+                    d3dImage.setEntityPostiton(growY, "y");
+                    updateOgre();
+                    break;
+
+                case Key.LeftCtrl:
+                    growY = false;
                     d3dImage.setEntityPostiton(growY, "y");
                     updateOgre();
                     break;
@@ -150,15 +156,47 @@ namespace OgrePF
                     updateOgre();
                     break;
 
-                case Key.S:
-                    growY = false;
-                    d3dImage.setEntityPostiton(growY, "y");
-                    updateOgre();
-                    break;
-
                 case Key.D:
                     growX = true;
                     d3dImage.setEntityPostiton(growX, "x");
+                    updateOgre();
+                    break;
+
+                case Key.W:
+                    growZ = true;
+                    d3dImage.setEntityPostiton(growZ, "z");
+                    updateOgre();
+                    break;
+
+                case Key.S:
+                    growZ = false;
+                    d3dImage.setEntityPostiton(growZ, "z");
+                    updateOgre();
+                    break;
+
+                //Direction
+
+                case Key.Up:
+                    growX = false;
+                    d3dImage.setEntityLookDirection(growX, "x");
+                    updateOgre();
+                    break;
+
+                case Key.Down:
+                    growX = true;
+                    d3dImage.setEntityLookDirection(growX, "x");
+                    updateOgre();
+                    break;
+
+                case Key.Left:
+                    growZ = true;
+                    d3dImage.setEntityLookDirection(growZ, "z");
+                    updateOgre();
+                    break;
+                    
+                case Key.Right:
+                    growZ = false;
+                    d3dImage.setEntityLookDirection(growZ, "z");
                     updateOgre();
                     break;
             }            
@@ -231,10 +269,11 @@ namespace OgrePF
                     bool yMove = Math.Abs(deltaY) > 0.1;
                     bool xGrow = deltaX > 0;
                     bool yGrow = deltaY > 0;
-
                     d3dImage.setCameraAngle(xMove, yMove, xGrow, yGrow);
                     updateOgre();
+
                 }
+                    //d3dImage.setEntityLookDirection(xGrow);
             }
 
             lastXAxis = xAxis;

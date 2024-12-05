@@ -6,7 +6,7 @@
         xmlns:OgreEng="clr-namespace:OgreEngine;assembly=OgreEngine"
         mc:Ignorable="d"
         Title="AuE Ogre" Height="450" Width="800" 
-        Loaded="Window_Loaded" Unloaded="Window_Unloaded" PreviewKeyUp="Window_PreviewKeyUp" PreviewKeyDown="Window_PreviewKeyDown" MouseWheel="Window_MouseWheel" SizeChanged="Window_SizeChanged" WindowStartupLocation="CenterScreen" Foreground="White" KeyDown="Window_KeyDown" KeyUp="Window_KeyUp" >
+        Loaded="Window_Loaded" Unloaded="Window_Unloaded" PreviewKeyUp="Window_PreviewKeyUp" PreviewKeyDown="Window_PreviewKeyDown" MouseWheel="Window_MouseWheel" SizeChanged="Window_SizeChanged" WindowStartupLocation="CenterScreen" Foreground="White" KeyDown="Window_KeyDown" KeyUp="Window_KeyUp" Background="#FF004AFF" >
     <Grid>
         <Image x:Name="img" Stretch="None" Margin="108,57,20,3" MouseLeftButtonDown="img_MouseLeftButtonDown" MouseMove="img_MouseMove" MouseLeftButtonUp="img_MouseLeftButtonUp" MouseRightButtonDown="img_MouseRightButtonDown" MouseRightButtonUp="img_MouseRightButtonUp" MouseDown="img_MouseDown" MouseUp="img_MouseUp" />
         <Button Content="Print" Click="Button_Click" Height="34" VerticalAlignment="Top" Margin="388,10,300,0" Width="112"/>

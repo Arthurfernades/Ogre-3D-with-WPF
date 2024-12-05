@@ -36,11 +36,15 @@ namespace OgreEngine
 
         private float xAxisEntity, yAxisEntity, zAxisEntity;
 
+        private float xAxisEntityDirection, yAxisEntityDirection, zAxisEntityDirection;
+
+        private int xRotationCount, yRotationCount, zRotationCount;
+
         private Radian yaw;
 
         private Radian pitch;
 
-        private SceneNode entityNode;
+        private SceneNode entityNode, camnode;
 
         private Entity entity;
 
@@ -51,6 +55,7 @@ namespace OgreEngine
             distance = 150;
             xAxis = 0;
             yAxis = 0;
+
             yaw = new Radian(xAxis);
             pitch = new Radian(yAxis);
 
@@ -58,9 +63,13 @@ namespace OgreEngine
 
             #region Entity position
 
-            xAxisEntity = 0;
+            xAxisEntity = 1;
             yAxisEntity = 0;
             zAxisEntity = 0;
+
+            xAxisEntityDirection = 0;
+            yAxisEntityDirection = 0;
+            zAxisEntityDirection = 0;
 
             #endregion
         }
@@ -130,14 +139,65 @@ namespace OgreEngine
 
             if (axis == "y")
             {
-                if (!grow)
+                if (grow)
                     yAxisEntity += sense;
                 else
                     yAxisEntity -= sense;
 
             }
 
+            if (axis == "z")
+            {
+                if (grow)
+                    zAxisEntity += sense;
+                else
+                    zAxisEntity -= sense;
+
+            }
+
             entityNode.setPosition(xAxisEntity, yAxisEntity, zAxisEntity);
+            camman.setYawPitchDist(new Radian(xAxis), new Radian(yAxis), distance);
+
+        }
+
+        public void setEntityLookDirection(bool grow, string axis)
+        {
+            float sense = 1f;
+
+            if (axis == "x")
+            {
+                if (grow)
+                {                                
+                    yAxisEntityDirection += sense;
+                    yAxisEntity += sense;
+                    entityNode.setDirection(0, yAxisEntity, 0, Node.TransformSpace.TS_LOCAL, new Vector3(0, 0, -1));
+                    xRotationCount++;
+                 
+                } else
+                {
+                    yAxisEntityDirection -= sense;
+                    yAxisEntity -= sense;
+                    entityNode.setDirection(0, yAxisEntity, 0, Node.TransformSpace.TS_LOCAL, new Vector3(0, 0, -1));
+                }
+
+            } else if (axis == "z")
+            {
+                if (grow)
+                {
+                    //zAxisEntityDirection += sense;
+                    xAxisEntity += sense;
+                    zAxisEntity += sense;
+                    entityNode.setDirection(xAxisEntity, 0, zAxisEntity, Node.TransformSpace.TS_LOCAL, new Vector3(0, 0, -1));
+                }
+                else
+                {
+                    //zAxisEntityDirection -= sense;
+                    xAxisEntity -= sense;
+                    zAxisEntity -= sense;
+                    entityNode.setDirection(xAxisEntity, 0, zAxisEntity, Node.TransformSpace.TS_LOCAL, new Vector3(0, 0, -1));
+                }
+            }
+
         }
 
         #region ViewportSize Property
@@ -324,24 +384,32 @@ namespace OgreEngine
 
                 #region Ambient Light
 
-                scnMgr.setAmbientLight(new ColourValue(0.1f, 0.1f, 0.1f));
+                scnMgr.setAmbientLight(new ColourValue(0f, 0f, 0f));
 
                 #endregion
+
+                entity = scnMgr.createEntity("ogrehead.mesh");
+                entityNode = scnMgr.getRootSceneNode().createChildSceneNode();
+                entityNode.setPosition(xAxisEntity, yAxisEntity, zAxisEntity);
+                entityNode.attachObject(entity);
+                entityNode.showBoundingBox(true);
 
                 #region Camera
 
                 cam = scnMgr.createCamera("myCam");
                 cam.setAutoAspectRatio(true);
                 cam.setNearClipDistance(5);
-                var camnode = scnMgr.getRootSceneNode().createChildSceneNode();
+                camnode = scnMgr.getRootSceneNode().createChildSceneNode();
                 camnode.attachObject(cam);
-
+                camnode.setAutoTracking(true, entityNode);
                 #endregion
+
 
                 #region Camera Man
 
                 camman = new CameraMan(camnode);
-                camman.setStyle(CameraStyle.CS_ORBIT);
+                camman.setStyle(CameraStyle.CS_MANUAL);
+                camman.setTarget(entityNode);
                 camman.setYawPitchDist(yaw, pitch, distance);
 
                 #endregion
@@ -370,27 +438,18 @@ namespace OgreEngine
 
             var light = scnMgr.createLight("MainLight");
             var lightnode = scnMgr.getRootSceneNode().createChildSceneNode();
-            lightnode.setPosition(0f, 10f, 15f);
+            lightnode.setPosition(10f, 10f, 10f);
             lightnode.attachObject(light);
 
-            #endregion
-
-            #region Entity
-
-            entity = scnMgr.createEntity("robot.mesh");
-            entityNode = scnMgr.getRootSceneNode().createChildSceneNode();
-            entityNode.setPosition(xAxisEntity, yAxisEntity, zAxisEntity);
-            entityNode.attachObject(entity);
-
-            #endregion
-
+            #endregion       
         }
 
         public void ChangeEntity(string model3D)
         {
             scnMgr.destroyEntity(entity);
             Entity newEntity = entity = scnMgr.createEntity(model3D + ".mesh");
-            entityNode.attachObject(newEntity);
+            entity = newEntity;
+            entityNode.attachObject(entity);
         }
 
         public void AddEntity(string model3D)
@@ -399,6 +458,10 @@ namespace OgreEngine
             SceneNode newEntityNode = scnMgr.getRootSceneNode().createChildSceneNode();
             newEntityNode.setPosition(xAxisEntity, yAxisEntity, zAxisEntity);
             newEntityNode.attachObject(newEntity);
+        }
+
+        public void DetectColision()
+        {
         }
 
         public void InitRenderTarget()
